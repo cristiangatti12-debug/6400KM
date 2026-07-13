@@ -1,18 +1,71 @@
+@import "tailwindcss";
+
+/*
+  Serai design system — "calm & trustworthy"
+  Soft teal-blues and greens, airy neutrals, generous rounding.
+*/
 :root {
-  --bg: #f8fafc;
-  --surface: #ffffff;
-  --border: #e2e8f0;
-  --text: #0f172a;
-  --muted: #64748b;
-  --brand: #0ea5e9;
-  --brand-dark: #0284c7;
-  --danger: #ef4444;
+  --background: #f6fafa;
+  --foreground: #0f2a30;
+
+  --card: #ffffff;
+  --card-foreground: #0f2a30;
+
+  --primary: #0d9488; /* teal 600 — the trust color */
+  --primary-foreground: #ffffff;
+
+  --secondary: #e8f5f3; /* soft teal wash */
+  --secondary-foreground: #0f4c47;
+
+  --muted: #eef3f4;
+  --muted-foreground: #5b7076;
+
+  --accent: #d6efe9; /* sage/mint accent */
+  --accent-foreground: #0f4c47;
+
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  --success: #059669;
+
+  --border: #e1eaeb;
+  --input: #e1eaeb;
+  --ring: #0d9488;
+
+  --radius: 0.9rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 0.4rem);
+  --radius-md: calc(var(--radius) - 0.2rem);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 0.3rem);
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
 }
 
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 html,
@@ -22,23 +75,14 @@ body {
 }
 
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
 a {
   color: inherit;
   text-decoration: none;
-}
-
-button {
-  font-family: inherit;
-  cursor: pointer;
-}
-
-input {
-  font-family: inherit;
 }

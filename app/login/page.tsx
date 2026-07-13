@@ -4,7 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import styles from "../auth.module.css";
+import { Logo } from "@/components/Logo";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,47 +45,57 @@ export default function LoginPage() {
   }
 
   return (
-    <main className={styles.wrap}>
-      <div className={styles.card}>
-        <div className={styles.logo}>6400KM</div>
-        <h1 className={styles.title}>Welcome back</h1>
-        <p className={styles.subtitle}>Log in to your account</p>
+    <main className="min-h-[100dvh] flex flex-col items-center justify-center p-6 bg-gradient-to-b from-secondary to-background">
+      <div className="w-full max-w-sm">
+        <div className="flex justify-center mb-8">
+          <Logo />
+        </div>
 
-        <form onSubmit={handleLogin} className={styles.form}>
-          <label className={styles.label}>
-            Email
-            <input
-              className={styles.input}
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-            />
-          </label>
+        <Card className="shadow-lg shadow-primary/5">
+          <CardHeader>
+            <CardTitle>Welcome back</CardTitle>
+            <CardDescription>Log in to your account</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                />
+              </div>
 
-          <label className={styles.label}>
-            Password
-            <input
-              className={styles.input}
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
-          </label>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
 
-          {error && <p className={styles.error}>{error}</p>}
+              {error && (
+                <p className="text-sm text-destructive">{error}</p>
+              )}
 
-          <button className={styles.button} type="submit" disabled={loading}>
-            {loading ? "Logging in…" : "Log in"}
-          </button>
-        </form>
+              <Button type="submit" size="lg" disabled={loading} className="mt-1">
+                {loading ? "Logging in…" : "Log in"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
-        <p className={styles.footer}>
+        <p className="mt-6 text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
-          <Link href="/signup" className={styles.link}>
+          <Link href="/signup" className="font-semibold text-primary">
             Sign up
           </Link>
         </p>

@@ -1,6 +1,9 @@
-# 6400KM
+# Serai
 
-A travel app for people who want to meet others going where they go.
+The modern caravanserai — a travel app for people who want to meet fellow
+travelers they can trust and journey together. (Named after the roadside inns
+of the Silk Road, ~6,400 km, where travelers met and continued together.)
+
 This is **Sprint 1**: sign up / log in, and an empty 4-tab shell
 (Feed, Itineraries, Trips, Chat).
 

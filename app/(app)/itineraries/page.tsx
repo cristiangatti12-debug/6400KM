@@ -1,14 +1,12 @@
-import styles from "../placeholder.module.css";
+import { Map } from "lucide-react";
+import { Placeholder } from "@/components/Placeholder";
 
 export default function ItinerariesPage() {
   return (
-    <div className={styles.screen}>
-      <div className={styles.emoji}>🗺️</div>
-      <h1 className={styles.title}>Itineraries</h1>
-      <p className={styles.note}>
-        Coming soon: map-first route cards with photos from users who did the
-        trip, plus AI suggestions.
-      </p>
-    </div>
+    <Placeholder
+      icon={Map}
+      title="Itineraries"
+      note="Coming soon: map-first route cards with photos from users who did the trip, plus AI suggestions."
+    />
   );
 }
