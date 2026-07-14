@@ -7,7 +7,8 @@
 create table if not exists public.itineraries (
   id uuid primary key default gen_random_uuid(),
   title text,
-  destinations text[] not null default '{}',   -- ordered stops
+  destinations text[] not null default '{}',   -- ordered stops (names)
+  stop_points jsonb not null default '[]',     -- [{name,lat,lng}] for the map
   days integer check (days is null or (days >= 1 and days <= 365)),
   interest_tags text[] not null default '{}',
   budget_level text check (
@@ -19,6 +20,10 @@ create table if not exists public.itineraries (
   created_by_user_id uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now()
 );
+
+-- For databases created before maps existed:
+alter table public.itineraries
+  add column if not exists stop_points jsonb not null default '[]';
 
 -- POSTS (photos now, reels later; media is a list of {type,url})
 create table if not exists public.posts (

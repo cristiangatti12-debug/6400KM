@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { X, Plus, Trash2 } from "lucide-react";
+import { X, Plus, Trash2, MapPin, Loader2, Check, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/image";
 import type { MediaItem } from "@/lib/types";
@@ -13,8 +13,33 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { TagSelect } from "@/components/TagSelect";
+import { MapPreview } from "@/components/MapPreview";
 
 const MAX_PHOTOS = 8;
+
+type Stop = {
+  text: string;
+  lat?: number;
+  lng?: number;
+  label?: string;
+  status: "idle" | "loading" | "ok" | "notfound";
+};
+
+async function geocode(text: string) {
+  try {
+    const res = await fetch(`/api/geocode?q=${encodeURIComponent(text)}`);
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.result as {
+      name: string;
+      lat: number;
+      lng: number;
+      label: string;
+    } | null;
+  } catch {
+    return null;
+  }
+}
 
 export function CreatePostForm({ userId }: { userId: string }) {
   const router = useRouter();
@@ -23,15 +48,18 @@ export function CreatePostForm({ userId }: { userId: string }) {
   const [caption, setCaption] = useState("");
   const [destination, setDestination] = useState("");
 
-  // Itinerary
   const [itTitle, setItTitle] = useState("");
-  const [stops, setStops] = useState<string[]>([""]);
+  const [stops, setStops] = useState<Stop[]>([{ text: "", status: "idle" }]);
   const [days, setDays] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
   const [budget, setBudget] = useState("");
 
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const located = stops
+    .filter((s) => s.lat != null && s.lng != null)
+    .map((s) => ({ name: s.text.trim(), lat: s.lat!, lng: s.lng! }));
 
   function pickFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = Array.from(e.target.files ?? []);
@@ -42,11 +70,43 @@ export function CreatePostForm({ userId }: { userId: string }) {
     setFiles((prev) => prev.filter((_, idx) => idx !== i));
   }
 
-  function setStop(i: number, val: string) {
-    setStops((prev) => prev.map((s, idx) => (idx === i ? val : s)));
+  function setStopText(i: number, val: string) {
+    setStops((prev) =>
+      prev.map((s, idx) =>
+        idx === i
+          ? { text: val, status: "idle", lat: undefined, lng: undefined }
+          : s
+      )
+    );
   }
+
+  // Look the place up when the user leaves the field.
+  async function locateStop(i: number) {
+    const text = stops[i]?.text.trim();
+    if (!text || stops[i].status === "ok") return;
+    setStops((prev) =>
+      prev.map((s, idx) => (idx === i ? { ...s, status: "loading" } : s))
+    );
+    const hit = await geocode(text);
+    setStops((prev) =>
+      prev.map((s, idx) =>
+        idx === i
+          ? hit
+            ? {
+                ...s,
+                lat: hit.lat,
+                lng: hit.lng,
+                label: hit.label,
+                status: "ok",
+              }
+            : { ...s, status: "notfound" }
+          : s
+      )
+    );
+  }
+
   function addStop() {
-    setStops((prev) => [...prev, ""]);
+    setStops((prev) => [...prev, { text: "", status: "idle" }]);
   }
   function removeStop(i: number) {
     setStops((prev) => prev.filter((_, idx) => idx !== i));
@@ -56,12 +116,12 @@ export function CreatePostForm({ userId }: { userId: string }) {
     e.preventDefault();
     setError(null);
 
-    const cleanStops = stops.map((s) => s.trim()).filter(Boolean);
+    const clean = stops.filter((s) => s.text.trim());
     if (files.length === 0) {
       setError("Add at least one photo.");
       return;
     }
-    if (cleanStops.length === 0) {
+    if (clean.length === 0) {
       setError("Add at least one stop for the itinerary.");
       return;
     }
@@ -69,6 +129,15 @@ export function CreatePostForm({ userId }: { userId: string }) {
     setSaving(true);
     const supabase = createClient();
     try {
+      // Fill in coordinates for any stop that wasn't looked up yet.
+      const resolved = [...clean];
+      for (let i = 0; i < resolved.length; i++) {
+        if (resolved[i].lat == null && resolved[i].status !== "notfound") {
+          const hit = await geocode(resolved[i].text.trim());
+          if (hit) resolved[i] = { ...resolved[i], lat: hit.lat, lng: hit.lng };
+        }
+      }
+
       // 1) Compress + upload all photos in parallel (keeps their order)
       const media: MediaItem[] = await Promise.all(
         files.map(async (file): Promise<MediaItem> => {
@@ -88,12 +157,18 @@ export function CreatePostForm({ userId }: { userId: string }) {
         })
       );
 
+      const destinations = resolved.map((s) => s.text.trim());
+      const stopPoints = resolved
+        .filter((s) => s.lat != null && s.lng != null)
+        .map((s) => ({ name: s.text.trim(), lat: s.lat, lng: s.lng }));
+
       // 2) Create the itinerary
       const { data: itinerary, error: itErr } = await supabase
         .from("itineraries")
         .insert({
-          title: itTitle.trim() || cleanStops.join(" → "),
-          destinations: cleanStops,
+          title: itTitle.trim() || destinations.join(" → "),
+          destinations,
+          stop_points: stopPoints,
           days: days ? Number(days) : null,
           interest_tags: interests,
           budget_level: budget || null,
@@ -108,7 +183,7 @@ export function CreatePostForm({ userId }: { userId: string }) {
       const { error: postErr } = await supabase.from("posts").insert({
         author_id: userId,
         caption: caption.trim() || null,
-        destination: destination.trim() || cleanStops[0],
+        destination: destination.trim() || destinations[0],
         media,
         itinerary_id: itinerary.id,
       });
@@ -182,7 +257,8 @@ export function CreatePostForm({ userId }: { userId: string }) {
         <div>
           <h2 className="text-sm font-bold">Itinerary</h2>
           <p className="text-xs text-muted-foreground">
-            This is what shows up on the Itineraries page.
+            Stops are placed on a map — this is what shows on the Itineraries
+            page.
           </p>
         </div>
 
@@ -197,26 +273,47 @@ export function CreatePostForm({ userId }: { userId: string }) {
           />
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           <Label>Stops (in order)</Label>
           {stops.map((stop, i) => (
-            <div key={i} className="flex gap-2">
-              <Input
-                value={stop}
-                onChange={(e) => setStop(i, e.target.value)}
-                placeholder={`Stop ${i + 1}`}
-                maxLength={80}
-              />
-              {stops.length > 1 && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeStop(i)}
-                  aria-label="Remove stop"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+            <div key={i} className="flex flex-col gap-1">
+              <div className="flex gap-2">
+                <Input
+                  value={stop.text}
+                  onChange={(e) => setStopText(i, e.target.value)}
+                  onBlur={() => locateStop(i)}
+                  placeholder={`Stop ${i + 1} — e.g. Lisbon`}
+                  maxLength={80}
+                />
+                {stops.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeStop(i)}
+                    aria-label="Remove stop"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              {stop.status === "loading" && (
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Finding it on the map…
+                </span>
+              )}
+              {stop.status === "ok" && stop.label && (
+                <span className="inline-flex items-center gap-1 text-xs text-primary">
+                  <Check className="h-3 w-3" />
+                  <span className="truncate">{stop.label}</span>
+                </span>
+              )}
+              {stop.status === "notfound" && (
+                <span className="inline-flex items-center gap-1 text-xs text-destructive">
+                  <AlertCircle className="h-3 w-3" />
+                  Couldn&apos;t find that place — try a different spelling.
+                </span>
               )}
             </div>
           ))}
@@ -231,6 +328,17 @@ export function CreatePostForm({ userId }: { userId: string }) {
             Add stop
           </Button>
         </div>
+
+        {/* Live map preview as stops are added */}
+        {located.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5" />
+              Route preview
+            </span>
+            <MapPreview stops={located} height={200} />
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">

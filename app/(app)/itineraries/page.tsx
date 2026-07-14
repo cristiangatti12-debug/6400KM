@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Map, Route, CalendarDays } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { budgetLabel } from "@/lib/profileOptions";
+import { MapPreview } from "@/components/MapPreview";
 
 export default async function ItinerariesPage() {
   const supabase = await createClient();
@@ -47,6 +48,9 @@ export default async function ItinerariesPage() {
             key={it.id}
             className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4"
           >
+            {/* Map first — the route at a glance */}
+            <MapPreview stops={it.stop_points ?? []} height={200} />
+
             <div className="flex flex-col gap-1">
               <h2 className="font-bold">
                 {it.title || stops.join(" → ") || "Itinerary"}
