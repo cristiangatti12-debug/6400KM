@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { CreatePostForm } from "@/components/CreatePostForm";
+import { PostForm } from "@/components/PostForm";
 
 export default async function NewPostPage() {
   const supabase = await createClient();
@@ -12,7 +12,7 @@ export default async function NewPostPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-bold tracking-tight">New post</h1>
-      <CreatePostForm userId={user.id} />
+      <PostForm userId={user.id} mode="create" />
     </div>
   );
 }

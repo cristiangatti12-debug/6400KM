@@ -1,9 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Route } from "lucide-react";
+import Link from "next/link";
+import { Route, Pencil } from "lucide-react";
 import { PostCard } from "@/components/PostCard";
 import { DeletePostButton } from "@/components/DeletePostButton";
 import { MapPreview } from "@/components/MapPreview";
+import { buttonVariants } from "@/components/ui/button";
 import { toPostCard } from "@/lib/mapPost";
 
 export default async function PostPage({
@@ -54,11 +56,20 @@ export default async function PostPage({
         </section>
       )}
       {isAuthor && (
-        <DeletePostButton
-          postId={post.id}
-          itineraryId={post.itinerary_id ?? null}
-          media={post.media ?? []}
-        />
+        <div className="flex flex-wrap items-start gap-2">
+          <Link
+            href={`/post/${post.id}/edit`}
+            className={buttonVariants({ variant: "outline" })}
+          >
+            <Pencil className="h-4 w-4" />
+            Edit post
+          </Link>
+          <DeletePostButton
+            postId={post.id}
+            itineraryId={post.itinerary_id ?? null}
+            media={post.media ?? []}
+          />
+        </div>
       )}
     </div>
   );
