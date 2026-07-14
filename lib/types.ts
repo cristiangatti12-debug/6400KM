@@ -14,6 +14,30 @@ export type Profile = {
   updated_at: string;
 };
 
+export type MediaItem = { type: "photo" | "reel"; url: string };
+
+export type Itinerary = {
+  id: string;
+  title: string | null;
+  destinations: string[];
+  days: number | null;
+  interest_tags: string[];
+  budget_level: string | null;
+  source: "ai_generated" | "founder_curated" | "user_created";
+  created_by_user_id: string | null;
+  created_at: string;
+};
+
+export type Post = {
+  id: string;
+  author_id: string;
+  caption: string | null;
+  destination: string | null;
+  media: MediaItem[];
+  itinerary_id: string | null;
+  created_at: string;
+};
+
 export type Verification = {
   user_id: string;
   id_review_status: IdReviewStatus;

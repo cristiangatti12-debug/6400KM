@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { PlusSquare } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import BottomTabBar from "@/components/BottomTabBar";
 import { Logo } from "@/components/Logo";
@@ -35,13 +36,22 @@ export default async function AppLayout({
         <Link href="/feed" aria-label="Home">
           <Logo markClassName="h-7 w-7" className="text-lg" />
         </Link>
-        <Link href="/profile" aria-label="Your profile">
-          <Avatar
-            src={photo}
-            name={name}
-            className="w-9 text-sm ring-1 ring-border"
-          />
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/new"
+            aria-label="Create a post"
+            className="text-muted-foreground transition-colors hover:text-primary"
+          >
+            <PlusSquare className="h-6 w-6" />
+          </Link>
+          <Link href="/profile" aria-label="Your profile">
+            <Avatar
+              src={photo}
+              name={name}
+              className="w-9 text-sm ring-1 ring-border"
+            />
+          </Link>
+        </div>
       </header>
 
       <main className="px-4 pt-5 pb-[calc(88px+env(safe-area-inset-bottom))]">

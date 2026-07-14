@@ -2,11 +2,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LogOut, Pencil, MapPin, Cake, Link2, AtSign } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import type { Profile, Verification } from "@/lib/types";
+import type { Profile, Verification, Post } from "@/lib/types";
 import { budgetLabel } from "@/lib/profileOptions";
 import { Avatar } from "@/components/Avatar";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { TrustSection } from "@/components/TrustSection";
+import { PostGrid } from "@/components/PostGrid";
 import { buttonVariants } from "@/components/ui/button";
 
 export default async function ProfilePage() {
@@ -27,6 +28,13 @@ export default async function ProfilePage() {
     .select("*")
     .eq("user_id", user.id)
     .maybeSingle<Verification>();
+
+  const { data: posts } = await supabase
+    .from("posts")
+    .select("id, author_id, caption, destination, media, itinerary_id, created_at")
+    .eq("author_id", user.id)
+    .order("created_at", { ascending: false })
+    .returns<Post[]>();
 
   const verif: Verification = verification ?? {
     user_id: user.id,
@@ -169,6 +177,20 @@ export default async function ProfilePage() {
           photos, and travel interests.
         </p>
       )}
+
+      {/* Posts */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Posts
+        </h2>
+        {posts && posts.length > 0 ? (
+          <PostGrid posts={posts} />
+        ) : (
+          <p className="rounded-xl bg-secondary p-4 text-sm text-secondary-foreground">
+            No posts yet. Tap the ＋ at the top to share your first trip.
+          </p>
+        )}
+      </section>
 
       {/* Trust & verification */}
       <TrustSection verification={verif} userId={user.id} />
