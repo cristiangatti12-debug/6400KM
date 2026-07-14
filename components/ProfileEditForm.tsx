@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { X, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { compressImage } from "@/lib/image";
 import type { Profile } from "@/lib/types";
 import {
   TRAVEL_INTERESTS,
@@ -65,20 +66,24 @@ export function ProfileEditForm({ profile }: { profile: Profile }) {
     const supabase = createClient();
 
     try {
-      // 1) Upload any newly picked photos to the user's storage folder.
-      const uploadedUrls: string[] = [];
-      for (const file of newFiles) {
-        const ext = file.name.split(".").pop() || "jpg";
-        const path = `${profile.id}/${crypto.randomUUID()}.${ext}`;
-        const { error: upErr } = await supabase.storage
-          .from("profile-photos")
-          .upload(path, file, { upsert: false });
-        if (upErr) throw upErr;
-        const { data } = supabase.storage
-          .from("profile-photos")
-          .getPublicUrl(path);
-        uploadedUrls.push(data.publicUrl);
-      }
+      // 1) Compress + upload any newly picked photos in parallel (keeps order).
+      const uploadedUrls = await Promise.all(
+        newFiles.map(async (file) => {
+          const compressed = await compressImage(file);
+          const path = `${profile.id}/${crypto.randomUUID()}.jpg`;
+          const { error: upErr } = await supabase.storage
+            .from("profile-photos")
+            .upload(path, compressed, {
+              upsert: false,
+              contentType: "image/jpeg",
+            });
+          if (upErr) throw upErr;
+          const { data } = supabase.storage
+            .from("profile-photos")
+            .getPublicUrl(path);
+          return data.publicUrl;
+        })
+      );
 
       const finalPhotos = [...photos, ...uploadedUrls];
 

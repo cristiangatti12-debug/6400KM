@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { X, Plus, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { compressImage } from "@/lib/image";
 import type { MediaItem } from "@/lib/types";
 import { TRAVEL_INTERESTS, BUDGET_LEVELS } from "@/lib/profileOptions";
 import { Button } from "@/components/ui/button";
@@ -68,20 +69,24 @@ export function CreatePostForm({ userId }: { userId: string }) {
     setSaving(true);
     const supabase = createClient();
     try {
-      // 1) Upload photos
-      const media: MediaItem[] = [];
-      for (const file of files) {
-        const ext = file.name.split(".").pop() || "jpg";
-        const path = `${userId}/${crypto.randomUUID()}.${ext}`;
-        const { error: upErr } = await supabase.storage
-          .from("post-media")
-          .upload(path, file, { upsert: false });
-        if (upErr) throw upErr;
-        const { data } = supabase.storage
-          .from("post-media")
-          .getPublicUrl(path);
-        media.push({ type: "photo", url: data.publicUrl });
-      }
+      // 1) Compress + upload all photos in parallel (keeps their order)
+      const media: MediaItem[] = await Promise.all(
+        files.map(async (file): Promise<MediaItem> => {
+          const compressed = await compressImage(file);
+          const path = `${userId}/${crypto.randomUUID()}.jpg`;
+          const { error: upErr } = await supabase.storage
+            .from("post-media")
+            .upload(path, compressed, {
+              upsert: false,
+              contentType: "image/jpeg",
+            });
+          if (upErr) throw upErr;
+          const { data } = supabase.storage
+            .from("post-media")
+            .getPublicUrl(path);
+          return { type: "photo", url: data.publicUrl };
+        })
+      );
 
       // 2) Create the itinerary
       const { data: itinerary, error: itErr } = await supabase

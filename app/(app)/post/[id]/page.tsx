@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PostCard } from "@/components/PostCard";
+import { DeletePostButton } from "@/components/DeletePostButton";
 import { toPostCard } from "@/lib/mapPost";
 
 export default async function PostPage({
@@ -31,5 +32,18 @@ export default async function PostPage({
     .eq("user_id", post.author_id)
     .maybeSingle();
 
-  return <PostCard post={toPostCard(post, verif?.verified_badge ?? false)} />;
+  const isAuthor = post.author_id === user.id;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <PostCard post={toPostCard(post, verif?.verified_badge ?? false)} />
+      {isAuthor && (
+        <DeletePostButton
+          postId={post.id}
+          itineraryId={post.itinerary_id ?? null}
+          media={post.media ?? []}
+        />
+      )}
+    </div>
+  );
 }
