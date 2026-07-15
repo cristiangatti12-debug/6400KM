@@ -27,14 +27,21 @@ export function PostCard({ post }: { post: PostCardData }) {
   return (
     <article className="overflow-hidden rounded-2xl border border-border bg-card">
       <div className="flex items-center gap-3 p-3">
-        <Avatar
-          src={post.author.photo}
-          name={post.author.name}
-          className="w-9 text-sm"
-        />
+        <Link href={`/profile/${post.author.id}`}>
+          <Avatar
+            src={post.author.photo}
+            name={post.author.name}
+            className="w-9 text-sm"
+          />
+        </Link>
         <div className="flex flex-col">
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-semibold">{post.author.name}</span>
+            <Link
+              href={`/profile/${post.author.id}`}
+              className="text-sm font-semibold hover:underline"
+            >
+              {post.author.name}
+            </Link>
             {post.author.verified && <VerifiedBadge />}
           </div>
           {post.destination && (
